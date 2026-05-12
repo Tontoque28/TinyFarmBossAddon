@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:entity",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "iceandfire:dragonegg_copper"
+        },
+        {
+          "type": "minecraft:item",
+          "name": "iceandfire:dragonegg_electric"
+        },
+        {
+          "type": "minecraft:item",
+          "name": "iceandfire:dragonegg_amythest"
+        },
+        {
+          "type": "minecraft:item",
+          "name": "iceandfire:dragonegg_black"
+        }
+      ]
+    }
+  ]
+}

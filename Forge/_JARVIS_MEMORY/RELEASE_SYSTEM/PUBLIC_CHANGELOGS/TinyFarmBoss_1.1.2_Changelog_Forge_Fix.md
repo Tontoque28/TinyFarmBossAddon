@@ -1,0 +1,2 @@
+v1.1.2 (Fix):
+- Updated deprecated code related to ResourceLocation creation to align with modern Forge practices. This is a technical maintenance change to ensure future compatibility and remove compiler warnings. No new features have been added.

@@ -1,0 +1,36 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="MIT License"
+
+[[mods]]
+modId="tinyfarmbossaddon"
+version="1.2.0"
+displayName="Tiny Mob Farm Addon: Bosses"
+logoFile="icon.png"
+credits="This is an unofficial addon. Original Tiny Mob Farm mod by DAQEM."
+authors="Tontoque28"
+description='''
+An unofficial utility addon for Tiny Mob Farm. Extends the Lasso to safely capture bosses (Wither, Ender Dragon, Warden) using custom loot tables to bypass player-kill restrictions.
+
+It also includes a robust Anti-Crash System that allows farming of complex modded entities (Ice and Fire Dragons, MineColonies mobs) and Vanilla Slimes without crashing the game.
+Requires the original Tiny Mob Farm mod by DAQEM.
+'''
+
+[[dependencies.tinyfarmbossaddon]]
+    modId="forge"
+    mandatory=true
+    versionRange="[47,)"
+    ordering="NONE"
+    side="BOTH"
+[[dependencies.tinyfarmbossaddon]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="[1.20.1,1.21)"
+    ordering="NONE"
+    side="BOTH"
+[[dependencies.tinyfarmbossaddon]]
+    modId="tinymobfarm"
+    mandatory=true
+    versionRange="[1.0,)"
+    ordering="AFTER"
+    side="BOTH"

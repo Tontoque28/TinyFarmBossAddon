@@ -1,0 +1,16 @@
+# Ignorar carpetas de compilación y caché de ambos proyectos
+.gradle/
+build/
+run/
+run-data/
+out/
+.mixin.out/
+
+# Ignorar archivos del IDE
+.idea/
+*.iml
+*.iws
+.vscode/
+
+# Ignorar archivos compilados de Java
+*.class

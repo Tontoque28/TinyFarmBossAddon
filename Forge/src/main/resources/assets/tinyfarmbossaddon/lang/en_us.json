@@ -1,0 +1,5 @@
+{
+  "message.tinyfarmbossaddon.boss_captured": "You have captured the beast, sir!",
+  "message.tinyfarmbossaddon.blacklist": "§c[TinyFarmBoss] §fError: This mob is blacklisted and cannot be captured.",
+  "message.tinyfarmbossaddon.corrupt_entity": "§c[TinyFarmBoss] §fError: Corrupt entity, capture cancelled."
+}
