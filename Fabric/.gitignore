@@ -1,40 +1,24 @@
-# gradle
-
 .gradle/
 build/
 out/
-classes/
-
-# eclipse
-
-*.launch
-
-# idea
-
+run/
+run-data/
+logs/
+crash-reports/
+saves/
+usercache.json
+options.txt
+.mixin.out/
 .idea/
 *.iml
-*.ipr
 *.iws
-
-# vscode
-
-.settings/
+*.ipr
 .vscode/
-bin/
-.classpath
 .project
-
-# macos
-
-*.DS_Store
-
-# fabric
-
-run/
-
-# java
-
-hs_err_*.log
-replay_*.log
-*.hprof
-*.jfr
+.classpath
+.settings/
+bin/
+*.class
+.DS_Store
+Thumbs.db
+libs/
