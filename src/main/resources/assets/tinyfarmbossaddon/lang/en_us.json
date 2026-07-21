@@ -1,0 +1,11 @@
+{
+  "message.tinyfarmbossaddon.boss_captured": "You have captured the beast, sir!",
+  "message.tinyfarmbossaddon.blacklist": "§c[TinyFarmBoss] §fError: This mob is blacklisted and cannot be captured.",
+  "message.tinyfarmbossaddon.corrupt_entity": "§c[TinyFarmBoss] §fError: Corrupt entity, capture cancelled.",
+  "tinyfarmbossaddon.commands.player_only": "This command must be run by a player.",
+  "tinyfarmbossaddon.commands.missing_lasso": "Could not find Tiny Mob Farm lasso item (tinymobfarm:lasso).",
+  "tinyfarmbossaddon.commands.unknown_boss": "Unknown boss: %s. Use: wither, ender_dragon, warden.",
+  "tinyfarmbossaddon.commands.give_success": "Gave lasso with %s.",
+  "tinyfarmbossaddon.commands.test_dragons_ok": "Delivered all dragon test lassos.",
+  "tinyfarmbossaddon.commands.iceandfire_required_test": "Ice and Fire must be loaded to use this test command."
+}
