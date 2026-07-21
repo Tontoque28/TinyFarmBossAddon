@@ -2,17 +2,16 @@ plugins {
     id 'eclipse'
     id 'idea'
     id 'maven-publish'
-    id 'net.minecraftforge.gradle' version '[6.0,6.2)'
+    id 'net.minecraftforge.gradle' version '6.0.24'
 }
 
 version = mod_version
 group = mod_group_id
 
 base {
-    archivesName = "${mod_id}-${mod_version} Forge"
+    archivesName = "${mod_id} Forge"
 }
 
-// OBLIGATORIO PARA 1.20.1: Usar Java 17
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
 println "Java: ${System.getProperty 'java.version'}, JVM: ${System.getProperty 'java.vm.version'} (${System.getProperty 'java.vendor'}), Arch: ${System.getProperty 'os.arch'}"
@@ -22,10 +21,37 @@ minecraft {
     copyIdeResources = true
 
     runs {
+        client {
+            // Define explícitamente la tarea runClient
+            workingDirectory project.file('run')
+            // AÑADE ESTA LÍNEA AQUÍ:
+            arg "-mixin.config=tinyfarmbossaddon.mixins.json"
+
+            mods {
+                tinyfarmbossaddon {
+                    source sourceSets.main
+                }
+            }
+        }
+        server {
+            // Define explícitamente la tarea runServer
+            workingDirectory project.file('run')
+            // AÑADE ESTA LÍNEA AQUÍ TAMBIÉN:
+            arg "-mixin.config=tinyfarmbossaddon.mixins.json"
+
+            mods {
+                tinyfarmbossaddon {
+                    source sourceSets.main
+                }
+            }
+        }
         configureEach {
             workingDirectory project.file('run')
             property 'forge.logging.markers', 'REGISTRIES'
             property 'forge.logging.console.level', 'debug'
+
+            property 'mixin.env.remapRefMap', 'true'
+            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
 
             mods {
                 "${mod_id}" {
@@ -33,51 +59,38 @@ minecraft {
                 }
             }
         }
-
-        client {
-            property 'forge.enabledGameTestNamespaces', mod_id
-        }
-
-        server {
-            property 'forge.enabledGameTestNamespaces', mod_id
-            args '--nogui'
-        }
-
-        gameTestServer {
-            property 'forge.enabledGameTestNamespaces', mod_id
-        }
-
-        data {
-            workingDirectory project.file('run-data')
-            args '--mod', mod_id, '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
-        }
     }
 }
 
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 repositories {
-    // 1. Servidor oficial para descargar la versión DEV de Architectury
+    maven { url "https://maven.architectury.dev/" }
+    flatDir { dir 'libs' }
+    maven { url "https://repo.spongepowered.org/repository/maven-public/" }
     maven {
-        url "https://maven.architectury.dev/"
-    }
-    // 2. Carpeta local para Tiny Mob Farm y sus librerías
-    flatDir {
-        dir 'libs'
+        url = "https://cursemaven.com"
+        content {
+            includeGroup "curse.maven"
+        }
     }
 }
 
 dependencies {
-    // Forge Base
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
-
-    // === VERSIÓN DEV DE ARCHITECTURY (Descargada de internet, evita el crasheo) ===
     implementation fg.deobf("dev.architectury:architectury-forge:9.2.14")
 
-    // === MODS LOCALES EN TU CARPETA 'libs' ===
     implementation fg.deobf("local:tinymobfarm:1.4.1-1.20.1-forge")
     implementation fg.deobf("local:supermartijn642configlib:1.1.8-forge-mc1.20")
     implementation fg.deobf("local:uilib:0.3.6-forge")
+
+
+    // Citadel se queda mediante Maven porque sí funciona:
+    implementation fg.deobf("curse.maven:citadel-331936:7476570")
+
+    // Ice and Fire configurado correctamente mediante flatDir local
+    implementation fg.deobf(group: 'local', name: 'iceandfire', version: '2.1.13-1.20.1-beta-5')
+
 }
 
 tasks.named('processResources', ProcessResources).configure {
@@ -96,33 +109,14 @@ tasks.named('processResources', ProcessResources).configure {
 }
 
 tasks.named('jar', Jar).configure {
-    manifest {
-        attributes([
-                'Specification-Title'     : mod_id,
-                'Specification-Vendor'    : mod_authors,
-                'Specification-Version'   : '1',
-                'Implementation-Title'    : project.name,
-                'Implementation-Version'  : project.jar.archiveVersion,
-                'Implementation-Vendor'   : mod_authors,
-                'Implementation-Timestamp': new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
-        ])
-    }
-    finalizedBy 'reobfJar'
-}
-
-publishing {
-    publications {
-        register('mavenJava', MavenPublication) {
-            artifact jar
-        }
-    }
-    repositories {
-        maven {
-            url "file://${project.projectDir}/mcmodsrepo"
-        }
-    }
-}
-
-tasks.withType(JavaCompile).configureEach {
-    options.encoding = 'UTF-8'
+    manifest.attributes([
+            'Specification-Title': mod_id,
+            'Specification-Vendor': mod_authors,
+            'Specification-Version': '1',
+            'Implementation-Title': project.name,
+            'Implementation-Version': project.jar.archiveVersion,
+            'Implementation-Vendor': mod_authors,
+            'Implementation-Timestamp': new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
+            'MixinConfigs': 'tinyfarmbossaddon.mixins.json'
+    ])
 }

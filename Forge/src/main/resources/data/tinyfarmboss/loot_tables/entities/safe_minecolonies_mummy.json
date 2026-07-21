@@ -2,17 +2,17 @@
   "forge:conditions": [
     {
       "type": "forge:mod_loaded",
-      "modid": "iceandfire"
+      "modid": "minecolonies"
     }
   ],
   "type": "minecraft:entity",
   "pools": [
     {
-      "rolls": 1.0,
+      "rolls": 3.0,
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "iceandfire:lightning_dragon_blood",
+          "name": "minecolonies:ancienttome",
           "functions": [
             {
               "function": "minecraft:set_count",
@@ -26,32 +26,13 @@
         },
         {
           "type": "minecraft:item",
-          "name": "iceandfire:dragonbone",
+          "name": "minecraft:sugar_cane",
           "functions": [
             {
               "function": "minecraft:set_count",
               "count": {
-                "min": 1.0,
-                "max": 3.0,
-                "type": "minecraft:uniform"
-              }
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "rolls": 1.0,
-      "entries": [
-        {
-          "type": "minecraft:item",
-          "name": "iceandfire:dragonscales_copper",
-          "functions": [
-            {
-              "function": "minecraft:set_count",
-              "count": {
-                "min": 1.0,
-                "max": 5.0,
+                "min": 0.0,
+                "max": 6.0,
                 "type": "minecraft:uniform"
               }
             }

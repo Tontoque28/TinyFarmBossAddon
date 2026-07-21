@@ -1,14 +1,14 @@
 package com.tontoque28.tinyfarmboss;
 
-import com.tontoque28.tinyfarmboss.config.TinyFarmBossConfig;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.DoubleTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.boss.EnderDragonPart;
-import net.minecraft.world.entity.monster.Enemy;
+import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
@@ -18,162 +18,108 @@ import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
 
-import java.util.List;
-
 @Mod.EventBusSubscriber(modid = TinyFarmBoss.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class LassoHandler {
 
     private static final String LASSO_ID = "tinymobfarm:lasso";
-    
+
+    // Umbral de vida requerido para poder capturar a un boss con el lazo.
+    private static final double CAPTURE_HEALTH_THRESHOLD = 0.5; // 50%
+
+    // Claves NBT: deben coincidir EXACTAMENTE con com.daqem.tinymobfarm.util.NBTHelper
+    // (verificado contra el código fuente de TinyMobFarm) para que el lazo pueda
+    // leer/soltar/renderizar el mob capturado sin diferencias.
+    private static final String MOB = "capturedMob";
+    private static final String MOB_NAME = "mobName";
+    private static final String MOB_ID = "mobId";
+    private static final String MOB_DATA = "mobData";
+    private static final String MOB_HEALTH = "mobHealth";
+    private static final String MOB_MAX_HEALTH = "mobMaxHealth";
+    private static final String MOB_HOSTILE = "mobHostile";
+    private static final String MOB_LOOTTABLE_LOCATION = "mobLootTableLocation";
+
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {
+        Player player = event.getEntity();
+        ItemStack stack = player.getItemInHand(event.getHand());
+
+        if (stack.isEmpty() || !stack.getDescriptionId().contains(LASSO_ID)) return;
         if (event.getLevel().isClientSide) return;
 
-        Player player = event.getEntity();
-        ItemStack itemStack = event.getItemStack();
         Entity target = event.getTarget();
+        if (!(target instanceof LivingEntity livingEntity) || target instanceof EnderDragonPart) return;
+        if (!(target instanceof Mob) || !target.isAlive()) return;
 
-        ResourceLocation itemRegistryName = ForgeRegistries.ITEMS.getKey(itemStack.getItem());
+        // Si el lazo ya tiene un mob capturado, no lo tocamos: evita sobrescribir
+        // accidentalmente un lazo lleno al clicar otra entidad con él en la mano.
+        if (stack.hasTag() && stack.getTag().contains(MOB)) return;
 
-        if (itemRegistryName == null || !itemRegistryName.toString().equals(LASSO_ID)) {
+        String entityId = ForgeRegistries.ENTITY_TYPES.getKey(target.getType()).toString();
+        if (!isTrackedBoss(entityId)) return; // el resto de mobs los maneja TinyMobFarm normalmente
+
+        double healthRatio = livingEntity.getHealth() / livingEntity.getMaxHealth();
+        if (healthRatio > CAPTURE_HEALTH_THRESHOLD) {
+            event.setCanceled(true);
+            player.displayClientMessage(
+                    Component.literal("Este boss debe estar por debajo del 50% de vida para ser capturado."),
+                    true
+            );
             return;
         }
 
-        if (target instanceof EnderDragonPart part) {
-            target = part.parentMob;
+        // El boss ya está lo bastante débil: lo curamos al 100% antes de que se
+        // complete la captura, para que el lazo lo guarde con todos sus usos.
+        livingEntity.setHealth(livingEntity.getMaxHealth());
+
+        // Si TinyMobFarm puede capturarlo de forma nativa (canChangeDimensions() == true,
+        // como los dragones de Ice and Fire), dejamos que su propio LassoItem#interactMob
+        // haga el trabajo: nuestro Mixin sobre LivingEntity#getLootTable ya fuerza la tabla
+        // de loot correcta (por tipo/etapa/color) en ese momento.
+        if (target.canChangeDimensions()) {
+            return;
         }
 
-        boolean isBoss = false;
-        if (target instanceof LivingEntity livingTarget) {
-            if (!livingTarget.canChangeDimensions()) {
-                isBoss = true;
-            }
-        }
-        
-        ResourceLocation entityIdLocation = ForgeRegistries.ENTITY_TYPES.getKey(target.getType());
-        if (entityIdLocation == null) return;
-        String entityId = entityIdLocation.toString();
-        String namespace = entityIdLocation.getNamespace();
-
-        if (isBlacklisted(entityIdLocation)) {
-             player.sendSystemMessage(Component.translatable("message.tinyfarmbossaddon.blacklist"));
-             event.setCanceled(true);
-             return;
-        }
-        
-        if (entityId.equals("minecraft:wither") || entityId.equals("minecraft:ender_dragon") || entityId.equals("minecraft:warden")) {
-             isBoss = true;
-        }
-
-        if (ModList.get().isLoaded("iceandfire")) {
-            if (entityId.equals("iceandfire:fire_dragon") || 
-                entityId.equals("iceandfire:ice_dragon") || 
-                entityId.equals("iceandfire:lightning_dragon")) {
-                isBoss = true;
-            }
-        }
-
-        if (ModList.get().isLoaded("cataclysm")) {
-            if (entityId.equals("cataclysm:ignis") || 
-                entityId.equals("cataclysm:ender_golem") || 
-                entityId.equals("cataclysm:netherite_monstrosity")) {
-                isBoss = true;
-            }
-        }
-
-        if (isWhitelisted(entityId)) {
-            isBoss = true;
-        }
-
-        if (isBoss) {
-            Entity finalTarget = target;
-            EntityCrashHandler.safeProcessEntity(target, "CAPTURE_BOSS", () -> {
-                captureBoss(player, itemStack, finalTarget, event.getHand());
-            });
-            event.setCanceled(true);
-        }
+        // Bosses vanilla como el Wither y el Ender Dragon tienen canChangeDimensions() == false,
+        // por lo que LassoItem#interactMob los rechaza SIEMPRE con "cannot capture boss",
+        // sin importar la vida. Replicamos aquí la captura manualmente (mismo formato NBT
+        // que usa TinyMobFarm) y cancelamos el evento para que su lógica nativa no vuelva
+        // a ejecutarse y bloquee la interacción.
+        captureBossManually(stack, livingEntity, entityId);
+        event.setCanceled(true);
     }
 
-    private static boolean isBlacklisted(ResourceLocation entityIdLocation) {
-        List<? extends String> blacklisted = TinyFarmBossConfig.BLACKLISTED_MOBS.get();
-        String fullId = entityIdLocation.toString();
-        String namespace = entityIdLocation.getNamespace();
+    private static void captureBossManually(ItemStack stack, LivingEntity target, String entityId) {
+        CompoundTag nbt = stack.getOrCreateTagElement(MOB);
 
-        for (String b : blacklisted) {
-            if (b.endsWith(":*")) {
-                if (namespace.equals(b.substring(0, b.indexOf(":*")))) return true;
-            } else if (b.equals(fullId)) {
-                return true;
-            }
-        }
-        return false;
+        CompoundTag mobData = target.saveWithoutId(new CompoundTag());
+        ListTag rotation = new ListTag();
+        rotation.add(DoubleTag.valueOf(0));
+        rotation.add(DoubleTag.valueOf(0));
+        mobData.put("Rotation", rotation);
+        mobData.remove("Fire");
+        mobData.remove("HurtTime");
+
+        nbt.put(MOB_DATA, mobData);
+        nbt.putString(MOB_NAME, target.getName().getString());
+        nbt.putString(MOB_ID, entityId);
+        // target.getLootTable() pasa por nuestro Mixin, que ya fuerza la ruta correcta
+        // en tinyfarmboss:entities/... para los bosses rastreados.
+        nbt.putString(MOB_LOOTTABLE_LOCATION, target.getLootTable().toString());
+        nbt.putDouble(MOB_HEALTH, Math.round(target.getHealth() * 10) / 10.0);
+        nbt.putDouble(MOB_MAX_HEALTH, target.getMaxHealth());
+        nbt.putBoolean(MOB_HOSTILE, target instanceof Monster);
+
+        stack.getOrCreateTag().put(MOB, nbt);
+
+        target.discard();
     }
 
-    private static boolean isWhitelisted(String entityId) {
-        return TinyFarmBossConfig.CUSTOM_FARMABLE_MOBS.get().contains(entityId);
-    }
-
-    private static void captureBoss(Player player, ItemStack lasso, Entity boss, InteractionHand hand) {
-        if (!(boss instanceof LivingEntity livingBoss)) return;
-
-        if (SlimeCompatibilitySystem.isSlimeOrVariant(boss)) {
-            if (!SlimeCompatibilitySystem.validateEntityForFarm(boss)) {
-                 player.sendSystemMessage(Component.translatable("message.tinyfarmbossaddon.corrupt_entity"));
-                 return;
-            }
+    private static boolean isTrackedBoss(String entityId) {
+        if (entityId.startsWith("iceandfire:") && entityId.contains("dragon") && ModList.get().isLoaded("iceandfire")) {
+            return true;
         }
-
-        CompoundTag mobData = new CompoundTag();
-        try {
-            boss.save(mobData);
-            if (SlimeCompatibilitySystem.isSlimeOrVariant(boss)) {
-                SlimeCompatibilitySystem.sanitizeAndPrepareSlimeForCapture(boss, mobData);
-            }
-        } catch (Exception e) {
-            mobData = new CompoundTag(); 
-        }
-        
-        mobData.remove("UUID");
-        mobData.remove("Pos");
-        mobData.remove("Motion");
-        mobData.remove("Rotation");
-        
-        CompoundTag capturedMobTag = new CompoundTag();
-        
-        capturedMobTag.putString("mobName", boss.getDisplayName().getString());
-        capturedMobTag.putBoolean("mobHostile", boss instanceof Enemy);
-        capturedMobTag.putDouble("mobMaxHealth", livingBoss.getMaxHealth());
-        
-        ResourceLocation entityId = ForgeRegistries.ENTITY_TYPES.getKey(boss.getType());
-        String idString = entityId != null ? entityId.toString() : "minecraft:pig";
-        capturedMobTag.putString("mobId", idString);
-        
-        // NUEVA LÓGICA: Asignar Loot Table correcta
-        String lootTable = SafeMobSimulationHandler.getSafeLootTable(boss);
-        if (ModList.get().isLoaded("iceandfire") && idString.startsWith("iceandfire:")) {
-            long ageTicks = mobData.getLong("AgeTicks");
-            if (ageTicks >= 1728000) { // Etapa 4 o superior
-                lootTable = "tinyfarmbossaddon:entities/ice_dragon_stage4_loot";
-            }
-        }
-        capturedMobTag.putString("mobLootTableLocation", lootTable);
-        
-        capturedMobTag.put("mobData", mobData);
-        capturedMobTag.putDouble("mobHealth", livingBoss.getHealth());
-
-        CompoundTag itemTag = lasso.getOrCreateTag();
-        itemTag.put("capturedMob", capturedMobTag);
-        
-        itemTag.remove("Entity");
-        itemTag.remove("EntityData");
-        
-        if (boss.hasCustomName()) {
-            lasso.setHoverName(boss.getCustomName());
-        } else {
-            lasso.setHoverName(boss.getDisplayName());
-        }
-
-        boss.discard();
-        player.setItemInHand(hand, lasso);
+        return entityId.equals("minecraft:wither")
+                || entityId.equals("minecraft:ender_dragon")
+                || entityId.equals("minecraft:warden");
     }
 }

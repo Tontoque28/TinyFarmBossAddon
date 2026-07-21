@@ -102,7 +102,7 @@ public class ModCommands {
                 break;
             case "barbarian":
                 mobId = "minecolonies:barbarian";
-                lootTable = "tinyfarmbossaddon:entities/safe_minecolonies_barbarian";
+                lootTable = "tinyfarmboss:entities/safe_minecolonies_barbarian";
                 maxHealth = 20.0d;
                 displayName = "Barbarian";
                 break;
