@@ -147,6 +147,13 @@ public class SafeMobSimulationHandler {
         if (idString.equals("minecraft:wither")) return "tinyfarmboss:entities/wither_custom";
         if (idString.equals("minecraft:ender_dragon")) return "tinyfarmboss:entities/ender_dragon_custom";
         if (idString.equals("minecraft:warden")) return "tinyfarmboss:entities/warden_custom";
-        return "minecraft:empty";
+        // CRITICO: para cualquier mob no rastreado (vanilla o de otros mods), hay que devolver
+        // su propia tabla de loot real (usando SU namespace, no "minecraft" fijo), NO
+        // "minecraft:empty". El Mixin compara este valor contra
+        // entity.getType().getDefaultLootTable() para decidir si sobreescribe o no; si aqui
+        // devolvemos "minecraft:empty" siempre, la comparacion nunca coincide y el Mixin termina
+        // vaciando la loot table de TODAS las entidades del juego (bug real: nada dropeaba,
+        // ni vanilla ni de mods, al matar mobs normalmente, dentro o fuera de granjas).
+        return entityId.getNamespace() + ":entities/" + entityId.getPath();
     }
 }

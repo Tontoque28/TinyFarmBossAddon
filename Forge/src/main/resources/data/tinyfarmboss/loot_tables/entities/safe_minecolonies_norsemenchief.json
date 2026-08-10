@@ -12,20 +12,6 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "minecolonies:ancienttome",
-          "functions": [
-            {
-              "function": "minecraft:set_count",
-              "count": {
-                "min": 0.0,
-                "max": 1.0,
-                "type": "minecraft:uniform"
-              }
-            }
-          ]
-        },
-        {
-          "type": "minecraft:item",
           "name": "minecraft:sugar_cane",
           "functions": [
             {

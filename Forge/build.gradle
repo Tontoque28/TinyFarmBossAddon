@@ -1,9 +1,23 @@
+buildscript {
+    repositories {
+        maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
+    }
+    dependencies {
+        // MixinGradle: conecta el Annotation Processor de Mixin con los mapeos SRG que
+        // genera ForgeGradle (incluso usando mapeos "official"), y genera el refmap
+        // correctamente. Sin esto, "-AreobfSrgFile" y compañía no se resuelven bien a mano.
+        classpath 'org.spongepowered:mixingradle:0.7-SNAPSHOT'
+    }
+}
+
 plugins {
     id 'eclipse'
     id 'idea'
     id 'maven-publish'
     id 'net.minecraftforge.gradle' version '6.0.24'
 }
+
+apply plugin: 'org.spongepowered.mixin'
 
 version = mod_version
 group = mod_group_id
@@ -13,6 +27,15 @@ base {
 }
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+mixin {
+    add sourceSets.main, "tinyfarmbossaddon.refmap.json"
+    config "tinyfarmbossaddon.mixins.json"
+}
 
 println "Java: ${System.getProperty 'java.version'}, JVM: ${System.getProperty 'java.vm.version'} (${System.getProperty 'java.vendor'}), Arch: ${System.getProperty 'os.arch'}"
 
@@ -79,6 +102,11 @@ repositories {
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
     implementation fg.deobf("dev.architectury:architectury-forge:9.2.14")
+
+    // Registra el Annotation Processor de Mixin: sin esto, "tinyfarmbossaddon.refmap.json"
+    // nunca se genera durante la compilación y los @Inject fallan en producción con
+    // "No refMap loaded" (aunque en el entorno de desarrollo de Gradle no se note el problema).
+    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 
     implementation fg.deobf("local:tinymobfarm:1.4.1-1.20.1-forge")
     implementation fg.deobf("local:supermartijn642configlib:1.1.8-forge-mc1.20")

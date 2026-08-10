@@ -1,7 +1,4 @@
 {
   "replace": false,
-  "entries": [
-    "tinyfarmbossaddon:boss_loot",
-    "tinyfarmbossaddon:bonus_drops"
-  ]
+  "entries": []
 }

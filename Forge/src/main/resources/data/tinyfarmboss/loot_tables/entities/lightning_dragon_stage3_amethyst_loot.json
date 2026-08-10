@@ -46,7 +46,7 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "iceandfire:dragonscales_amethyst",
+          "name": "iceandfire:dragonscales_amythest",
           "functions": [
             {
               "function": "minecraft:set_count",
