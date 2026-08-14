@@ -43,8 +43,11 @@ public class LassoHandler {
         Player player = event.getEntity();
         ItemStack stack = player.getItemInHand(event.getHand());
 
-        if (stack.isEmpty() || !stack.getDescriptionId().contains(LASSO_ID)) return;
-        if (event.getLevel().isClientSide) return;
+        if (stack.isEmpty()) return;
+        String itemId = ForgeRegistries.ITEMS.getKey(stack.getItem()) != null
+                ? ForgeRegistries.ITEMS.getKey(stack.getItem()).toString()
+                : "";
+        if (!itemId.equals(LASSO_ID)) return;
 
         Entity target = event.getTarget();
         if (!(target instanceof LivingEntity livingEntity) || target instanceof EnderDragonPart) return;
@@ -59,11 +62,25 @@ public class LassoHandler {
 
         double healthRatio = livingEntity.getHealth() / livingEntity.getMaxHealth();
         if (healthRatio > CAPTURE_HEALTH_THRESHOLD) {
+            // CRITICO: cancelamos en AMBOS lados (cliente y servidor). Si solo cancelamos en
+            // el servidor, el lado cliente sigue procesando la interaccion sin trabas y
+            // TinyMobFarm alcanza a mostrar su propio mensaje nativo "cannot capture boss"
+            // (evaluado del lado cliente) antes de que el paquete llegue siquiera al servidor.
             event.setCanceled(true);
-            player.displayClientMessage(
-                    Component.literal("Este boss debe estar por debajo del 50% de vida para ser capturado."),
-                    true
-            );
+            if (!event.getLevel().isClientSide) {
+                player.displayClientMessage(
+                        Component.literal("Este boss debe estar por debajo del 50% de vida para ser capturado."),
+                        true
+                );
+            }
+            return;
+        }
+
+        if (event.getLevel().isClientSide) {
+            // La captura real (curar, guardar NBT, eliminar la entidad) solo debe ocurrir
+            // en el servidor. Igualmente cancelamos aqui para bloquear el flujo nativo
+            // del lado cliente y evitar que se cuele su mensaje de rechazo.
+            event.setCanceled(true);
             return;
         }
 

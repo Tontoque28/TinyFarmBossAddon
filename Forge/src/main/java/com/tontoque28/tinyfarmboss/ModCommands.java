@@ -25,7 +25,7 @@ public class ModCommands {
     private static final String LASSO_PATH = "lasso";
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
-        dispatcher.register(Commands.literal("tinyfarmbossaddon")
+        dispatcher.register(Commands.literal("tfbaddon")
                 .requires(source -> source.hasPermission(2))
                 .then(Commands.literal("give")
                         .then(Commands.argument("boss", StringArgumentType.word())
