@@ -1,0 +1,79 @@
+buildscript {
+    repositories {
+        maven { url = 'https://maven.minecraftforge.net/' }
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'net.minecraftforge.gradle:ForgeGradle:3.+'
+    }
+}
+
+apply plugin: 'net.minecraftforge.gradle'
+apply plugin: 'eclipse'
+apply plugin: 'maven-publish'
+
+version = ''
+group = 'com.tontoque28.tinyfarmboss'
+archivesBaseName = 'TinyFarmBossAddon-1.3.2-Forge-1.12.2'
+
+sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8'
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+minecraft {
+    mappings channel: 'snapshot', version: '20171003-1.12'
+    accessTransformer = file('src/main/resources/META-INF/tinyfarmbossaddon_at.cfg')
+
+    runs {
+        client {
+            workingDirectory project.file('run-client')
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+            property 'forge.logging.console.level', 'debug'
+        }
+    }
+}
+
+dependencies {
+    minecraft 'net.minecraftforge:forge:1.12.2-14.23.5.2859'
+    compileOnly files('libs/TinyMobFarm-1.12.2-1.0.5.jar')
+}
+
+jar {
+    manifest {
+        attributes([
+            "Specification-Title": "tinyfarmbossaddon",
+            "Specification-Vendor": "Tontoque28",
+            "Specification-Version": "1",
+            "Implementation-Title": project.name,
+            "Implementation-Version": "1.3.2",
+            "Implementation-Vendor": "Tontoque28",
+            "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
+            "FMLCorePlugin": "com.tontoque28.tinyfarmboss.core.TfbCorePlugin",
+            "FMLCorePluginContainsFMLMod": "true",
+            "FMLAT": "tinyfarmbossaddon_at.cfg"
+        ])
+    }
+}
+
+jar.finalizedBy('reobfJar')
+
+task runServer(type: Exec) {
+    dependsOn 'build'
+    workingDir = project.file('run')
+    doFirst {
+        delete fileTree(dir: 'run/mods', include: '*.jar')
+        copy {
+            from 'build/libs'
+            include 'TinyFarmBossAddon-1.3.2-Forge-1.12.2.jar'
+            into 'run/mods'
+        }
+        copy {
+            from 'libs'
+            include '*.jar'
+            into 'run/mods'
+        }
+    }
+    commandLine "${System.getProperty('java.home')}/bin/java", '-Xmx2G', '-jar', 'forge-1.12.2-14.23.5.2859.jar', 'nogui'
+}
