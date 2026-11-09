@@ -1,0 +1,77 @@
+plugins {
+	id 'net.fabricmc.fabric-loom-remap' version "${loom_version}"
+	id 'maven-publish'
+}
+
+version = ''
+base { archivesName = "TinyFarmBossAddon-${project.mod_version}-Fabric-${project.minecraft_version}" }
+group = project.maven_group
+
+repositories {
+	mavenCentral()
+}
+
+loom {
+	runs {
+		server {
+			property "oshi.os.windows.hkeyperfdata", "false"
+		}
+	}
+}
+
+dependencies {
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	mappings loom.officialMojangMappings()
+	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+	modImplementation files('libs/tinymobfarm-1.5.2-1.21-fabric.jar')
+	modImplementation files('libs/architectury-13.0.8-fabric.jar')
+	modImplementation files('libs/yamlconfig-1.2-1.21-fabric.jar')
+	modImplementation files('libs/uilib-1.0.1-1.21.1-fabric.jar')
+	if (System.getenv('TFB_CON_ICEANDFIRE') == 'true') {
+		modImplementation files('libs/integration-fabric-0.2.jar')
+		modImplementation files('libs/IceAndFireCE-2.0-beta.15-1.21.1-fabric.jar')
+		modImplementation files('libs/jupiter-2.3.7-1.21.1-fabric.jar')
+		modImplementation files('libs/uranus-2.4.1-1.21.1-fabric.jar')
+	}
+}
+
+processResources {
+	inputs.property "version", project.mod_version
+
+	filesMatching("fabric.mod.json") {
+		expand "version": project.mod_version
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = 21
+	it.options.encoding = 'UTF-8'
+}
+
+java {
+	withSourcesJar()
+
+	sourceCompatibility = JavaVersion.VERSION_21
+	targetCompatibility = JavaVersion.VERSION_21
+}
+
+jar {
+	inputs.property "projectName", project.name
+
+	from("LICENSE") {
+		rename { "${it}_${project.name}"}
+	}
+}
+
+publishing {
+	publications {
+		create("mavenJava", MavenPublication) {
+			from components.java
+		}
+	}
+
+	repositories {
+	}
+}
