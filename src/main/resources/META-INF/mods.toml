@@ -1,0 +1,45 @@
+modLoader="javafml"
+loaderVersion="${loader_version_range}"
+license="${mod_license}"
+
+[[mods]]
+modId="${mod_id}"
+version="${mod_version}"
+displayName="${mod_name}"
+logoFile="icon.png"
+credits="This is an unofficial addon. Original Tiny Mob Farm mod by davidmaamoaix."
+authors="${mod_authors}"
+description='''
+An unofficial utility addon for Tiny Mob Farm. Extends the Lasso to safely capture bosses (Wither, Ender Dragon) using custom loot tables to bypass player-kill restrictions.
+
+It also includes a robust Anti-Crash System that allows farming of complex modded entities (Ice and Fire Dragons, MineColonies mobs) and Vanilla Slimes without crashing the game.
+Requires the original Tiny Mob Farm mod by davidmaamoaix.
+'''
+
+[[dependencies.${mod_id}]]
+modId="forge"
+mandatory=true
+versionRange="${forge_version_range}"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="minecraft"
+mandatory=true
+versionRange="${minecraft_version_range}"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="tinymobfarm"
+mandatory=true
+versionRange="[1.0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="iceandfire"
+mandatory=false
+versionRange="[2.1,)"
+ordering="AFTER"
+side="BOTH"
